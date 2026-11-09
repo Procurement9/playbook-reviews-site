@@ -15,8 +15,8 @@ generate-social.mjs  ──>  posts/*.md (Instagram/TikTok/Pinterest/Facebook/Yo
 
 ## One-Time Setup
 
-1. **Enable GitHub Pages:** repository **Settings → Pages → Source: Deploy from a branch → main → Save**.
-   The `.github/workflows/deploy.yml` workflow will then deploy the site on every push.
+1. **Enable GitHub Pages once:** repo **Settings → Pages** (direct link: https://github.com/Procurement9/playbook-reviews-site/settings/pages). Under **Build and deployment / Source**, select **GitHub Actions** → **Save**.
+   The `.github/workflows/deploy.yml` workflow will then deploy the site automatically on every push.
 2. **Swap affiliate tags:** replace `https://amzn.to/example-*` placeholders with your real Amazon Associates tag:
    ```bash
    sed -i 's|amzn.to/example-soundpulse|amzn.to/YOUR-REAL-TAG|g' *.html
