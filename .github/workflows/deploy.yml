@@ -29,7 +29,7 @@ jobs:
           publish_dir: ./
           publish_branch: gh-pages
           force_orphan: true
-          exclude_assets: '.git,.github,automation'
+          exclude_assets: '.github,automation'
 
   # Method 2: native Pages deploy (works with Settings → Pages → GitHub Actions)
   native-deploy:
