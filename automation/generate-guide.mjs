@@ -227,6 +227,39 @@ ${items
   writeFileSync(sm, xml);
 }
 
+function updateRss(published) {
+  const all = [
+    { slug: 'best-air-purifiers-2026', title: 'Best Air Purifiers for Allergies and Pets in 2026', desc: 'Our honest ranking of the 5 best air purifiers of 2026.', date: new Date().toUTCString() },
+    ...published.map((p) => ({ slug: p.slug, title: p.title, desc: `Our honest ranking of the best ${p.title.replace(/^Best /, '')}.`, date: p.publishedAt ? new Date(p.publishedAt).toUTCString() : new Date().toUTCString() })),
+    { slug: 'best-ergonomic-office-chairs-2026', title: 'Best Ergonomic Office Chairs of 2026', desc: 'Five ergonomic chairs tested for remote workers who sit 8+ hours a day.', date: 'Sun, 08 Nov 2026 20:00:00 GMT' },
+    { slug: 'best-wireless-headphones-2026', title: 'Best Wireless Headphones of 2026', desc: 'I tested 12 pairs of wireless headphones for 6 months — here are the 5 actually worth buying.', date: 'Sun, 08 Nov 2026 19:00:00 GMT' },
+  ];
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Honest Picks — Independent Buyer Guides</title>
+    <link>https://procurement9.github.io/playbook-reviews-site/</link>
+    <description>Tested product recommendations with real pros and cons. One honest winner per guide.</description>
+    <language>en</language>
+    <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
+    <atom:link href="https://procurement9.github.io/playbook-reviews-site/rss.xml" rel="self" type="application/rss+xml"/>
+${all
+  .map(
+    (a) => `    <item>
+      <title>${escape(a.title)}</title>
+      <link>https://procurement9.github.io/playbook-reviews-site/${a.slug}.html</link>
+      <guid>https://procurement9.github.io/playbook-reviews-site/${a.slug}.html</guid>
+      <pubDate>${a.date}</pubDate>
+      <description>${escape(a.desc)}</description>
+    </item>`
+  )
+  .join('\n')}
+  </channel>
+</rss>
+`;
+  writeFileSync(resolve(root, 'rss.xml'), xml);
+}
+
 function rebuildDirectory(published) {
   const list = [
     { slug: 'best-wireless-headphones-2026', title: 'Best Wireless Headphones of 2026', desc: '5 honest picks tested across months of flights, workouts, and desk work.', cat: 'Audio' },
@@ -298,8 +331,9 @@ function main() {
   const published = queue.queue.filter((q) => q.status === 'published');
   const all = ['best-wireless-headphones-2026', ...published.map((q) => q.slug)];
   updateSitemap(all);
+  updateRss(published);
   rebuildDirectory(published);
-  console.log('Updated sitemap.xml (' + (all.length + 4) + ' entries) and guides.html');
+  console.log('Updated sitemap.xml, rss.xml, and guides.html');
 }
 
 main();
