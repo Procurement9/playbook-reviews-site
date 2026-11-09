@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -15,11 +15,27 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+  # Method 1: deploy to gh-pages branch (works with Settings → Pages → Deploy from branch: gh-pages)
+  branch-deploy:
     runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy to gh-pages branch
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./
+          publish_branch: gh-pages
+          force_orphan: true
+          exclude_assets: '.git,.github,automation'
+
+  # Method 2: native Pages deploy (works with Settings → Pages → GitHub Actions)
+  native-deploy:
+    runs-on: ubuntu-latest
+    needs: branch-deploy
+    continue-on-error: true
     steps:
       - name: Checkout
         uses: actions/checkout@v4
