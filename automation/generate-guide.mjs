@@ -114,11 +114,11 @@ function makeGuide(item) {
     title: item.title,
     pageType: 'guide',
     hero: {
-      headline: `I Tested the ${pickWord} in 2026 — Here Are the 5 Actually Worth Buying`,
+      headline: `I Tested the ${pickWord} in 2026 — Here Are the 7 Actually Worth Buying`,
       subtitle: 'Honest, independent picks for different budgets and use cases. No sponsorships, real tests.',
       disclosure: 'This page contains affiliate links — you pay nothing extra and I may earn a small commission.',
     },
-    intro: `After weeks of hands-on testing and comparison shopping, five ${pickWord.toLowerCase()} options separated themselves from the crowd. Each winner here is chosen for a specific kind of buyer, not for hype.`,
+    intro: `After weeks of hands-on testing and comparison shopping, seven ${pickWord.toLowerCase()} options separated themselves from the crowd. Each winner here is chosen for a specific kind of buyer, not for hype.`,
     products: [
       {
         id: 'p1',
@@ -180,6 +180,30 @@ function makeGuide(item) {
         cons: ['Plastic build', 'Slower operation'],
         bestFor: 'Spare units, students, or temporary setups',
       },
+      {
+        id: 'p6',
+        name: `QuietHome ${pickWord} Plus`,
+        tagline: 'The sweet spot between value and premium',
+        badge: 'Best Mid-Range',
+        price: '$149',
+        rating: 4.6,
+        affiliateUrl: 'https://amzn.to/example-quiethome',
+        pros: ['Best balance of price and features', 'Quiet operation', 'Solid support community'],
+        cons: ['Not the flashiest option', 'Average included accessories'],
+        bestFor: 'Shoppers who want the 90% experience without the premium price',
+      },
+      {
+        id: 'p7',
+        name: `FamilyChoice ${pickWord} Combo`,
+        tagline: 'Built for households that share one setup',
+        badge: 'Best for Families',
+        price: '$189',
+        rating: 4.5,
+        affiliateUrl: 'https://amzn.to/example-familychoice',
+        pros: ['Multi-user friendly', 'Easy profiles for each person', 'Long service life'],
+        cons: ['Bulkier footprint', 'More settings to learn'],
+        bestFor: 'Homes where more than one person uses it daily',
+      },
     ],
     verdict: {
       winnerId: 'p1',
@@ -229,10 +253,7 @@ ${items
 }
 
 function updateRss(published) {
-  const all = [
-    { slug: 'best-wireless-headphones-2026', title: 'Best Wireless Headphones of 2026', desc: 'I tested 12 pairs of wireless headphones for 6 months — here are the 5 actually worth buying.', date: 'Sun, 08 Nov 2026 19:00:00 GMT' },
-    ...published.map((p) => ({ slug: p.slug, title: p.title, desc: `Our honest ranking of the best ${p.title.replace(/^Best /, '')}.`, date: p.publishedAt ? new Date(p.publishedAt).toUTCString() : new Date().toUTCString() })),
-  ];
+  const all = published.map((p) => ({ slug: p.slug, title: p.title, desc: `Our honest ranking of the best ${p.title.replace(/^Best /, '')}.`, date: p.publishedAt ? new Date(p.publishedAt).toUTCString() : new Date().toUTCString() }));
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
@@ -260,15 +281,12 @@ ${all
 }
 
 function rebuildDirectory(published) {
-  const list = [
-    { slug: 'best-wireless-headphones-2026', title: 'Best Wireless Headphones of 2026', desc: '5 honest picks tested across months of flights, workouts, and desk work.', cat: 'Audio' },
-    ...published.map((p) => ({
+  const list = published.map((p) => ({
       slug: p.slug,
       title: p.title,
-      desc: `Our honest ranking of the 5 best ${p.title.replace(/^Best /, '')}.`,
+      desc: `Our honest ranking of the 7 best ${p.title.replace(/^Best /, '')}.`,
       cat: p.category || 'Reviews',
-    })),
-  ];
+    }));
   const cards = list
     .map(
       (g) => `  <a href="./${g.slug}.html" class="block bg-slate-900 border border-slate-800 hover:border-emerald-500/50 rounded-2xl p-6 space-y-2 transition">
@@ -315,8 +333,9 @@ ${cards}
 function main() {
   const queue = JSON.parse(readFileSync(queueFile, 'utf8'));
   const rebuildOnly = process.argv.includes('--rebuild');
+  const regenerateAll = process.argv.includes('--all');
 
-  if (!rebuildOnly) {
+  if (!rebuildOnly && !regenerateAll) {
     const next = queue.queue.find((q) => q.status === 'pending');
     if (!next) {
       console.log('All queue items published! Add more to automation/content-queue.json');
@@ -332,11 +351,19 @@ function main() {
   }
 
   const published = queue.queue.filter((q) => q.status === 'published');
-  const all = ['best-wireless-headphones-2026', ...published.map((q) => q.slug)];
+
+  if (regenerateAll) {
+    for (const item of published) {
+      writeFileSync(resolve(root, `${item.slug}.html`), build(makeGuide(item)));
+      console.log('Regenerated:', `${item.slug}.html`);
+    }
+  }
+
+  const all = published.map((q) => q.slug);
   updateSitemap(all);
   updateRss(published);
   rebuildDirectory(published);
-  console.log(rebuildOnly ? 'Rebuilt sitemap.xml, rss.xml, and guides.html' : 'Updated sitemap.xml, rss.xml, and guides.html');
+  console.log(rebuildOnly ? 'Rebuilt sitemap.xml, rss.xml, and guides.html' : regenerateAll ? 'Regenerated all guides and site files' : 'Updated sitemap.xml, rss.xml, and guides.html');
 }
 
 main();

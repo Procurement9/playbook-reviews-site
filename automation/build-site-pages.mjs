@@ -1,15 +1,23 @@
 #!/usr/bin/env node
-import { writeFileSync } from 'node:fs';
+import { writeFileSync, readFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, '..');
+const queueFile = resolve(__dirname, 'content-queue.json');
 
-const GUIDES = [
-  { slug: 'best-wireless-headphones-2026', title: 'Best Wireless Headphones of 2026', desc: '5 honest picks tested across months of flights, workouts, and desk work.', cat: 'Audio' },
-  { slug: 'best-ergonomic-office-chairs-2026', title: 'Best Ergonomic Office Chairs of 2026', desc: 'Support picks for remote workers who sit 8+ hours a day.', cat: 'Work & Office' },
-];
+const DESCS = {
+  'best-wireless-headphones-2026': '7 honest picks tested across months of flights, workouts, and desk work.',
+  'best-ergonomic-office-chairs-2026': 'Support picks for remote workers who sit 8+ hours a day.',
+  'best-air-purifiers-2026': '7 picks tested for allergies, pets, wildfire smoke, and odor.',
+  'best-espresso-machines-2026': '7 machines tested — from budget picks to pro-level espresso.',
+};
+
+const GUIDES = JSON.parse(readFileSync(queueFile, 'utf8'))
+  .queue.filter((q) => q.status === 'published')
+  .sort((a, b) => (a.publishedAt || '').localeCompare(b.publishedAt || ''))
+  .map((q) => ({ slug: q.slug, title: q.title, desc: DESCS[q.slug] || 'Tested and ranked honest picks.', cat: q.category }));
 
 function shell(title, desc, body) {
   return `<!doctype html>
