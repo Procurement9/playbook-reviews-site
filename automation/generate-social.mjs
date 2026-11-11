@@ -1,15 +1,17 @@
 #!/usr/bin/env node
-import { writeFileSync, mkdirSync } from 'node:fs';
+import { writeFileSync, mkdirSync, readFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const postsDir = resolve(__dirname, '../posts');
+const queueFile = resolve(__dirname, 'content-queue.json');
+const BASE = 'https://procurement9.github.io/playbook-reviews-site/';
 mkdirSync(postsDir, { recursive: true });
 
 function posts(offer, url) {
   const o = offer;
-  const u = url || 'https://procurement9.github.io/playbook-reviews-site/';
+  const u = url || `${BASE}`;
   return `### INSTAGRAM CAPTION
 The honest truth about ${o}? There is no one-size-fits-all "best."
 
@@ -63,16 +65,28 @@ OUTLINE:
 `;
 }
 
+// Derive the product category ("Espresso Machines") from a queue title
+// like "Best Home Espresso Machines of 2026" or "... in 2026".
+function offerFromTitle(title) {
+  const m = (title || '').match(/^Best (.+?) (of|in) 20\d\d$/);
+  return m ? m[1] : title;
+}
+
 function main() {
-  const guides = [
-    { name: 'Wireless Headphones', file: 'best-wireless-headphones-2026.html' },
-    { name: 'Ergonomic Office Chairs', file: 'best-ergonomic-office-chairs-2026.html' },
-    { name: 'Air Purifiers for Allergies & Pets', file: 'best-air-purifiers-2026.html' },
-  ];
-  for (const g of guides) {
-    const slug = g.file.replace('.html', '');
-    const out = resolve(postsDir, `posts-${slug}.md`);
-    writeFileSync(out, posts(g.name, `https://procurement9.github.io/playbook-reviews-site/${g.file}`));
+  const queue = JSON.parse(readFileSync(queueFile, 'utf8'));
+  const published = queue.queue
+    .filter((q) => q.status === 'published')
+    .sort((a, b) => (a.publishedAt || '').localeCompare(b.publishedAt || ''));
+
+  if (published.length === 0) {
+    console.log('No published guides in content-queue.json; nothing to do.');
+    return;
+  }
+
+  for (const g of published) {
+    const file = `${g.slug}.html`;
+    const out = resolve(postsDir, `posts-${g.slug}.md`);
+    writeFileSync(out, posts(offerFromTitle(g.title), `${BASE}${file}`));
     console.log('Wrote:', out);
   }
 }

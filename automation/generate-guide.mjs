@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, '..');
 const queueFile = resolve(__dirname, 'content-queue.json');
+const BASE = 'https://procurement9.github.io/playbook-reviews-site/';
 
 function escape(s) {
   return (s || '')
@@ -204,11 +205,11 @@ function makeGuide(item) {
 function updateSitemap(slugs) {
   const sm = resolve(root, 'sitemap.xml');
   const items = [
-    { loc: 'https://example.com/', priority: '1.0', changefreq: 'daily' },
-    { loc: 'https://example.com/guides.html', priority: '0.9', changefreq: 'daily' },
-    ...slugs.map((s) => ({ loc: `https://example.com/${s}.html`, priority: '0.8', changefreq: 'monthly' })),
-    { loc: 'https://example.com/about.html', priority: '0.4', changefreq: 'monthly' },
-    { loc: 'https://example.com/disclosures.html', priority: '0.3', changefreq: 'monthly' },
+    { loc: `${BASE}`, priority: '1.0', changefreq: 'daily' },
+    { loc: `${BASE}guides.html`, priority: '0.9', changefreq: 'daily' },
+    ...slugs.map((s) => ({ loc: `${BASE}${s}.html`, priority: '0.8', changefreq: 'monthly' })),
+    { loc: `${BASE}about.html`, priority: '0.4', changefreq: 'monthly' },
+    { loc: `${BASE}disclosures.html`, priority: '0.3', changefreq: 'monthly' },
   ];
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -229,10 +230,8 @@ ${items
 
 function updateRss(published) {
   const all = [
-    { slug: 'best-air-purifiers-2026', title: 'Best Air Purifiers for Allergies and Pets in 2026', desc: 'Our honest ranking of the 5 best air purifiers of 2026.', date: new Date().toUTCString() },
-    ...published.map((p) => ({ slug: p.slug, title: p.title, desc: `Our honest ranking of the best ${p.title.replace(/^Best /, '')}.`, date: p.publishedAt ? new Date(p.publishedAt).toUTCString() : new Date().toUTCString() })),
-    { slug: 'best-ergonomic-office-chairs-2026', title: 'Best Ergonomic Office Chairs of 2026', desc: 'Five ergonomic chairs tested for remote workers who sit 8+ hours a day.', date: 'Sun, 08 Nov 2026 20:00:00 GMT' },
     { slug: 'best-wireless-headphones-2026', title: 'Best Wireless Headphones of 2026', desc: 'I tested 12 pairs of wireless headphones for 6 months — here are the 5 actually worth buying.', date: 'Sun, 08 Nov 2026 19:00:00 GMT' },
+    ...published.map((p) => ({ slug: p.slug, title: p.title, desc: `Our honest ranking of the best ${p.title.replace(/^Best /, '')}.`, date: p.publishedAt ? new Date(p.publishedAt).toUTCString() : new Date().toUTCString() })),
   ];
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
@@ -315,25 +314,29 @@ ${cards}
 
 function main() {
   const queue = JSON.parse(readFileSync(queueFile, 'utf8'));
-  const next = queue.queue.find((q) => q.status === 'pending');
-  if (!next) {
-    console.log('All queue items published! Add more to automation/content-queue.json');
-    return;
+  const rebuildOnly = process.argv.includes('--rebuild');
+
+  if (!rebuildOnly) {
+    const next = queue.queue.find((q) => q.status === 'pending');
+    if (!next) {
+      console.log('All queue items published! Add more to automation/content-queue.json');
+      return;
+    }
+    const guide = makeGuide(next);
+    const out = resolve(root, `${next.slug}.html`);
+    writeFileSync(out, build(guide));
+    console.log('Generated:', out);
+    next.status = 'published';
+    next.publishedAt = new Date().toISOString();
+    writeFileSync(queueFile, JSON.stringify(queue, null, 2));
   }
-  const guide = makeGuide(next);
-  const out = resolve(root, `${next.slug}.html`);
-  writeFileSync(out, build(guide));
-  console.log('Generated:', out);
-  next.status = 'published';
-  next.publishedAt = new Date().toISOString();
-  writeFileSync(queueFile, JSON.stringify(queue, null, 2));
 
   const published = queue.queue.filter((q) => q.status === 'published');
   const all = ['best-wireless-headphones-2026', ...published.map((q) => q.slug)];
   updateSitemap(all);
   updateRss(published);
   rebuildDirectory(published);
-  console.log('Updated sitemap.xml, rss.xml, and guides.html');
+  console.log(rebuildOnly ? 'Rebuilt sitemap.xml, rss.xml, and guides.html' : 'Updated sitemap.xml, rss.xml, and guides.html');
 }
 
 main();
