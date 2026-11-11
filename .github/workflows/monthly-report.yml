@@ -1,0 +1,42 @@
+name: Monthly accounting report
+
+on:
+  schedule:
+    # 1st of every month, 00:30 UTC — reports the month just ended
+    - cron: "30 0 1 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: "monthly-report"
+  cancel-in-progress: false
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Generate accounting report for last month
+        run: |
+          set -e
+          MONTH=$(date -u -d "$(date -u +%Y-%m-01) -1 day" +%Y-%m)
+          mkdir -p commissions/reports
+          node commissions/accounting.mjs report "$MONTH" > commissions/reports/${MONTH}.txt
+          echo "Report written: commissions/reports/${MONTH}.txt"
+
+      - name: Commit and push report
+        run: |
+          git config user.name "PlayBook Content Bot"
+          git config user.email "bot@playbook.local"
+          git add commissions/reports/ commissions/ledger.json commissions/ledger.csv commissions/affiliate-config.json
+          git diff --cached --quiet || git commit -m "Auto: monthly accounting report [skip ci]"
+          git push
