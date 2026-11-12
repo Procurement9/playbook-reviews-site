@@ -18,6 +18,12 @@ node automation/build-site-pages.mjs
 
 GitHub Pages deployment remains separate from the paused content generator. Inspect the actual deployment status before claiming that a change is live. The monthly accounting workflow and commission files are not changed by this correction.
 
+## Dahl connection check
+
+The manually triggered **Dahl connection check** workflow can test a minimal model request without generating or publishing website content. It runs only from `main`, has read-only repository permissions, and uses a GitHub Actions secret named `DAHL_API_KEY`. Create the secret in the repository's Settings → Secrets and variables → Actions; never commit the key or put it in a draft, issue, or workflow log. The Dahl key must have an allocated token balance. A successful check verifies connectivity, not the quality or safety of generated content.
+
+The draft storage location has not yet been selected. No Dahl drafting, scheduled AI content generation, or automatic publishing is configured by this connection check. Any future publishing process must require the owner's approval before website publication and should store unapproved drafts privately.
+
 ## Before resuming automation
 
 1. Research and verify real products and sources; distinguish hands-on testing from desk research.
