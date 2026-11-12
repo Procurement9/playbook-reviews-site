@@ -3,6 +3,11 @@ import { writeFileSync, readFileSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+// Fail closed: the legacy template contains fictional products and unverified test claims.
+// It must be replaced with sourced, reviewed content before it is used again.
+console.error('Publication paused: the legacy guide generator contains unverified samples.');
+process.exit(1);
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, '..');
 const queueFile = resolve(__dirname, 'content-queue.json');

@@ -1,36 +1,18 @@
-name: Weekly content drop
+name: Weekly content (paused for editorial review)
 
+# Automatic publishing is paused because the legacy generator contains fictional
+# product examples and unsupported testing claims. This manual status workflow
+# does not generate, commit, post or publish content. Re-enable a schedule only
+# after a verified, reviewed publishing process has replaced the old generator.
 on:
-  schedule:
-    # Every Sunday at 09:00 UTC
-    - cron: "0 9 * * 0"
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  generate:
+  editorial-status:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      - name: Generate next buyer guide
-        run: node automation/generate-guide.mjs
-
-      - name: Generate social post sets
-        run: node automation/generate-social.mjs
-
-      - name: Commit and push new content
-        run: |
-          git config user.name "PlayBook Content Bot"
-          git config user.email "bot@playbook.local"
-          git add -A
-          git diff --cached --quiet || git commit -m "Auto: publish weekly buyer guide and social posts [skip ci]"
-          git push
+      - name: Report paused status
+        run: echo 'Weekly guide and social publication are paused pending editorial review.'

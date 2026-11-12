@@ -1,153 +1,51 @@
 #!/usr/bin/env node
-import { writeFileSync, readFileSync } from 'node:fs';
-import { resolve, dirname } from 'node:path';
+import { writeFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const root = resolve(__dirname, '..');
-const queueFile = resolve(__dirname, 'content-queue.json');
+// Generates the intentionally limited public site. Historical content remains in Git history;
+// do not turn unverified samples back into product recommendations.
+const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const base = 'https://procurement9.github.io/playbook-reviews-site/';
+const escape = (value) => String(value).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
 
-const DESCS = {
-  'best-wireless-headphones-2026': '7 honest picks tested across months of flights, workouts, and desk work.',
-  'best-ergonomic-office-chairs-2026': 'Support picks for remote workers who sit 8+ hours a day.',
-  'best-air-purifiers-2026': '7 picks tested for allergies, pets, wildfire smoke, and odor.',
-  'best-espresso-machines-2026': '7 machines tested — from budget picks to pro-level espresso.',
-};
-
-const GUIDES = JSON.parse(readFileSync(queueFile, 'utf8'))
-  .queue.filter((q) => q.status === 'published')
-  .sort((a, b) => (a.publishedAt || '').localeCompare(b.publishedAt || ''))
-  .map((q) => ({ slug: q.slug, title: q.title, desc: DESCS[q.slug] || 'Tested and ranked honest picks.', cat: q.category }));
-
-function shell(title, desc, body) {
+function shell(title, description, body, noindex = false) {
   return `<!doctype html>
-<html lang="en">
-<head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${title} | Honest Picks</title>
-<meta name="description" content="${desc}">
-<script src="https://cdn.tailwindcss.com"></script>
-<script>tailwind.config={darkMode:'class',theme:{extend:{colors:{brand:{500:'#10b981',600:'#059669',700:'#047857'}}}}}</script>
-<style>html{scroll-behavior:smooth}</style>
-</head>
-<body class="bg-slate-950 text-slate-100 antialiased selection:bg-emerald-500 selection:text-white">
-<div class="max-w-4xl mx-auto px-4 py-8 space-y-12">
-  <nav class="flex items-center justify-between text-xs text-slate-400 border-b border-slate-900 pb-4">
-    <a href="./index.html" class="font-bold text-white text-sm">Honest Picks</a>
-    <div class="flex items-center gap-4">
-      <a href="./guides.html" class="hover:text-white">All Guides</a>
-      <a href="./about.html" class="hover:text-white">About & Methodology</a>
-      <a href="./disclosures.html" class="hover:text-white">Disclosures</a>
-    </div>
-  </nav>
-  ${body}
-  <footer class="border-t border-slate-900 pt-8 text-center text-xs text-slate-500 space-y-2">
-    <p>Honest Picks • independent product reviews funded by affiliate commissions, never sponsorships.</p>
-    <p class="text-[11px] text-slate-600">Amazon associates links may earn a commission. <a href="./disclosures.html" class="underline">Full disclosure</a>.</p>
-  </footer>
-</div>
-</body></html>`;
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${escape(title)} | Honest Picks</title><meta name="description" content="${escape(description)}">${noindex ? '<meta name="robots" content="noindex, follow">' : ''}
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#07111f;color:#e5edf5;font:16px/1.65 system-ui,-apple-system,sans-serif}a{color:#73e1bd}a:hover{color:white}.wrap{max-width:1000px;margin:auto;padding:0 22px}.nav{display:flex;align-items:center;justify-content:space-between;gap:20px;border-bottom:1px solid #263549;padding:22px 0}.brand{font-size:18px;font-weight:800;color:white;text-decoration:none}.nav-links{display:flex;gap:20px;flex-wrap:wrap;font-size:14px}.nav-links a{text-decoration:none;color:#bdcbd8}main{padding:56px 0 72px}h1{font-size:clamp(34px,7vw,60px);line-height:1.08;letter-spacing:-.035em;color:#fff;margin:10px 0 18px}h2{font-size:24px;line-height:1.25;color:white}p{color:#b9c9d9}.eyebrow{color:#6ee7bf;text-transform:uppercase;letter-spacing:.14em;font-weight:700;font-size:12px}.intro{font-size:18px;max-width:690px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px;margin:32px 0}.card,.notice{padding:24px;border:1px solid #25374a;border-radius:18px;background:#0e1c2c}.card h2{font-size:21px;margin:2px 0 8px}.card p{margin:8px 0 20px}.card a,.button{display:inline-block;font-weight:700}.notice{border-color:#987a3b;background:#251f17;margin:30px 0}.notice p{color:#f5e9cc;margin:0}.button{background:#70e1ba;color:#062c21;text-decoration:none;border-radius:10px;padding:12px 18px}.button:hover{color:#062c21;background:#a1f3d8}.text{max-width:720px}.links{display:flex;gap:12px;flex-wrap:wrap;margin:28px 0}.panel{margin:28px 0;padding:26px;background:#0e1c2c;border:1px solid #25374a;border-radius:18px}li{color:#b9c9d9;margin:8px 0}footer{border-top:1px solid #263549;padding:25px 0 35px;font-size:13px;color:#93a6b9}footer a{margin-left:14px}@media(max-width:580px){.nav{align-items:flex-start;flex-direction:column}.nav-links{gap:12px}main{padding:42px 0}}
+</style></head><body><div class="wrap"><nav class="nav"><a class="brand" href="./index.html">Honest Picks<span style="color:#70e1ba">.</span></a><div class="nav-links"><a href="./guides.html">Guides</a><a href="./hotels.html">Hotels</a><a href="./restaurants.html">Restaurants</a><a href="./flights.html">Flights</a><a href="./about.html">About</a></div></nav><main>${body}</main><footer>Honest Picks · Explore and compare thoughtfully <a href="./disclosures.html">Link disclosures</a></footer></div></body></html>\n`;
 }
-
-// GUIDES DIRECTORY
-const guidesBody = `
-<header class="text-center space-y-3">
-  <h1 class="text-3xl sm:text-5xl font-extrabold text-white">All Buyer Guides</h1>
-  <p class="text-slate-400 text-sm max-w-xl mx-auto">Every product recommendation we publish: tested, ranked, with real pros and cons. New guide every week.</p>
-</header>
-<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-${GUIDES.map((g) => `  <a href="./${g.slug}.html" class="block bg-slate-900 border border-slate-800 hover:border-emerald-500/50 rounded-2xl p-6 space-y-2 transition">
-    <span class="text-[11px] font-semibold text-emerald-400 uppercase tracking-wider">${g.cat}</span>
-    <h2 class="text-lg font-bold text-white">${g.title}</h2>
-    <p class="text-xs text-slate-400">${g.desc}</p>
-    <span class="text-xs text-emerald-300 font-semibold inline-block pt-2">Read guide →</span>
-  </a>`).join('\n')}
-</div>`;
-writeFileSync(resolve(root, 'guides.html'), shell('All Buyer Guides', 'Complete list of honest buyer guides tested and ranked.', guidesBody));
-console.log('Wrote guides.html');
-
-// ABOUT PAGE
-const aboutBody = `
-<header class="text-center space-y-3">
-  <h1 class="text-3xl sm:text-5xl font-extrabold text-white">About & Methodology</h1>
-  <p class="text-slate-400 text-sm max-w-xl mx-auto">Who we are, how we test, and why you can trust the recommendations.</p>
-</header>
-<article class="prose max-w-2xl mx-auto text-slate-300 text-sm leading-relaxed space-y-6">
-  <section class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-2">
-    <h2 class="text-base font-bold text-white">Our 5-Point Review Standard</h2>
-    <p>1. We personally test and live with products for months before publishing a ranking.<br>
-    2. We always publish real cons — never a sanitized "everything is great" review.<br>
-    3. We never accept payment, free product with strings, or pre-approval from any brand.<br>
-    4. We disclose affiliate relationships on every page, up front.<br>
-    5. We revisit and re-score guides as products change.</p>
-  </section>
-  <section class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-2">
-    <h2 class="text-base font-bold text-white">How This Site Makes Money</h2>
-    <p>When you buy through links on our site, we may earn a small affiliate commission at no extra cost to you. This is our only revenue source, and it is the reason we can keep the site free and ad-free. It never changes which product wins a guide.</p>
-  </section>
-  <section class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-2">
-    <h2 class="text-base font-bold text-white">Corrections & Contact</h2>
-    <p>Found something we got wrong? We update guides within 48 hours of credible feedback. We also accept reader questions about upcoming purchases — honest opinions only.</p>
-  </section>
-</article>`;
-writeFileSync(resolve(root, 'about.html'), shell('About & Methodology', 'How Honest Picks tests products and earns trust.', aboutBody));
-console.log('Wrote about.html');
-
-// DISCLOSURES PAGE
-const discBody = `
-<header class="text-center space-y-3">
-  <h1 class="text-3xl sm:text-5xl font-extrabold text-white">Affiliate Disclosures</h1>
-  <p class="text-slate-400 text-sm max-w-xl mx-auto">FTC-compliant affiliate relationship statements for every program we participate in.</p>
-</header>
-<article class="max-w-2xl mx-auto text-slate-300 text-xs leading-relaxed space-y-5 bg-slate-900 border border-slate-800 rounded-2xl p-6">
-  <p>Honest Picks participates in affiliate marketing programs, including the Amazon Associates program. As an Amazon Associate we earn from qualifying purchases. This means clicking links on this site may earn us a small commission at no extra cost to you.</p>
-  <p>Our editorial opinions are never influenced by affiliate relationships: we do not accept sponsored placements, brands do not preview our reviews, and we return or refuse gifts offered with editorial conditions.</p>
-  <p>Pricing and availability shown in guides is accurate as of the date of publication and may change without notice. Always verify final pricing on the retailer’s site.</p>
-  <p>Last updated: November 2026.</p>
-</article>`;
-writeFileSync(resolve(root, 'disclosures.html'), shell('Affiliate Disclosures', 'Official FTC affiliate disclosure statements.', discBody));
-console.log('Wrote disclosures.html');
-
-// HOMEPAGE with nav + hero + latest guides + trust bar + email capture
-const homeBody = `
-<header class="text-center space-y-4">
-  <div class="inline-block text-xs font-semibold px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/30">INDEPENDENT BUYER GUIDES</div>
-  <h1 class="text-4xl sm:text-6xl font-extrabold text-white leading-tight">Buy the right thing the first time.</h1>
-  <p class="text-base sm:text-lg text-slate-300 max-w-xl mx-auto">We buy products, test them for months, publish real pros and cons, and name ONE honest winner per guide. No sponsorships ever.</p>
-  <div class="flex items-center justify-center gap-3 pt-2 text-xs">
-    <a href="./guides.html" class="px-5 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold transition">Browse all guides →</a>
-    <a href="./about.html" class="px-5 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 transition">How we test</a>
-  </div>
-</header>
-
-<section class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-center text-xs">
-  <div class="bg-slate-900 border border-slate-800 rounded-xl p-4"><div class="text-emerald-400 font-bold text-base">100%</div><div class="text-slate-400 mt-1">Independent reviews</div></div>
-  <div class="bg-slate-900 border border-slate-800 rounded-xl p-4"><div class="text-teal-400 font-bold text-base">0</div><div class="text-slate-400 mt-1">Sponsored placements accepted</div></div>
-  <div class="bg-slate-900 border border-slate-800 rounded-xl p-4"><div class="text-amber-300 font-bold text-base">Weekly</div><div class="text-slate-400 mt-1">New buyer guides published</div></div>
-</section>
-
-<section class="space-y-4">
-  <div class="flex items-center justify-between">
-    <h2 class="text-xs font-semibold uppercase tracking-wider text-slate-400">Latest buyer guides</h2>
-    <a href="./guides.html" class="text-xs text-emerald-400 hover:underline">View all →</a>
-  </div>
-  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-${GUIDES.map((g) => `    <a href="./${g.slug}.html" class="block bg-slate-900 border border-slate-800 hover:border-emerald-500/50 rounded-2xl p-6 space-y-2 transition">
-      <span class="text-[11px] font-semibold text-emerald-400 uppercase tracking-wider">${g.cat}</span>
-      <h3 class="text-lg font-bold text-white">${g.title}</h3>
-      <p class="text-xs text-slate-400">${g.desc}</p>
-      <span class="text-xs text-emerald-300 font-semibold inline-block pt-2">Read guide →</span>
-    </a>`).join('\n')}
-  </div>
-</section>
-
-<section class="bg-gradient-to-r from-emerald-950/60 via-slate-900 to-teal-950/60 border border-emerald-900/60 rounded-2xl p-8 text-center space-y-3">
-  <h2 class="text-xl font-bold text-white">Get the next honest guide in your inbox</h2>
-  <p class="text-xs text-slate-400 max-w-md mx-auto">One email per month. Only the products that actually survived testing.</p>
-  <form class="flex max-w-sm mx-auto gap-2" onsubmit="event.preventDefault();this.innerHTML='<div class=text-xs text-emerald-300 py-3>You are on the list ✓</div>';">
-    <input type="email" required placeholder="you@email.com" class="flex-1 px-3.5 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white text-xs">
-    <button class="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs">Subscribe</button>
-  </form>
-</section>`;
-writeFileSync(resolve(root, 'index.html'), shell('Honest Picks — Independent Product Reviews', 'Honest buyer guides with real pros and cons. One winner per guide.', homeBody));
-console.log('Wrote index.html');
+function writePage(path, title, desc, body, noindex = false) {
+  writeFileSync(resolve(root, path), shell(title, desc, body, noindex));
+  console.log('Wrote', path);
+}
+const correction = `<div class="notice" role="note"><p><strong>Editorial correction:</strong> Earlier product guides contained sample products, prices, ratings and claims of hands-on testing that were not verified. Those recommendations have been withdrawn while the content is reviewed.</p></div>`;
+const cards = `<div class="grid"><article class="card"><span class="eyebrow">Stay</span><h2>Hotels</h2><p>Start a hotel search and compare the room terms that matter to you.</p><a href="./hotels.html">Explore hotels →</a></article><article class="card"><span class="eyebrow">Dine</span><h2>Restaurants</h2><p>Find places to eat and check their current hours, menu and location.</p><a href="./restaurants.html">Explore restaurants →</a></article><article class="card"><span class="eyebrow">Fly</span><h2>Flights</h2><p>Compare routes and check the total fare and airline rules before booking.</p><a href="./flights.html">Explore flights →</a></article></div>`;
+writePage('index.html', 'Find your next good choice', 'Explore hotel, restaurant and flight search resources.', `<div class="text"><span class="eyebrow">Explore with confidence</span><h1>A little research goes a long way.</h1><p class="intro">Find useful starting points for your next trip or meal. Compare your options and confirm the details directly with the provider.</p></div>${correction}<h2>Explore by category</h2>${cards}<p><a href="./guides.html">Product guides and correction information →</a></p>`);
+writePage('guides.html', 'Guides', 'Product guides are being reviewed; explore travel and dining categories.', `<span class="eyebrow">Browse</span><h1>Guides &amp; categories</h1>${correction}<p class="text">We have paused the sample buyer guides. Real product recommendations will only return after their details and sources are checked.</p>${cards}`);
+writePage('about.html', 'About', 'Editorial correction and approach to sources.', `<span class="eyebrow">Our approach</span><h1>About this site</h1>${correction}<div class="panel text"><h2>How to use the site</h2><p>The travel and dining sections currently provide links to third-party search services and practical comparison checklists. We do not claim to have personally visited, tested, or ranked the results.</p><p>Check current availability, prices, policies and other important details with the provider before you book.</p></div>`);
+writePage('disclosures.html', 'Link disclosures', 'Information about third-party search links.', `<span class="eyebrow">Transparency</span><h1>Link disclosures</h1><div class="panel text"><p>The travel and restaurant links on this site are ordinary links to third-party search services. They are not configured as affiliate links. No commission or income is guaranteed.</p><p>If affiliate links are added later, their relationship should be disclosed clearly near those links and program participation should be verified before making any membership claims.</p></div>`);
+const sections = [
+  {file:'hotels.html', eyebrow:'Stay', title:'Hotels', desc:'Start a hotel search and compare key booking terms.', intro:'Search for a place to stay, then compare the details on the booking provider’s site.', url:'https://www.google.com/travel/hotels', button:'Search hotels', bullets:['Check the full stay total, taxes and fees.','Compare the location and transport to the places you plan to visit.','Review cancellation rules, accessibility and the room details before booking.']},
+  {file:'restaurants.html', eyebrow:'Dine', title:'Restaurants', desc:'Search for restaurants and check current details.', intro:'Look for restaurants in your chosen area and check the latest information directly with the business.', url:'https://www.google.com/maps/search/restaurants/', button:'Search restaurants', bullets:['Confirm opening hours and the menu with the restaurant.','Check location, accessibility and reservation requirements.','Read recent customer feedback while keeping in mind that experiences vary.']},
+  {file:'flights.html', eyebrow:'Fly', title:'Flights', desc:'Search flight routes and compare fare details.', intro:'Explore flight options and check the total price and rules with the airline or booking provider.', url:'https://www.google.com/travel/flights', button:'Search flights', bullets:['Compare the total fare, flight times and any connections.','Check baggage allowances and seat-selection charges.','Review change and cancellation rules before paying.']}
+];
+for (const s of sections) {
+  const list = s.bullets.map(x => `<li>${escape(x)}</li>`).join('');
+  writePage(s.file,s.title,s.desc,`<span class="eyebrow">${escape(s.eyebrow)} · Search resources</span><h1>${escape(s.title)}</h1><p class="intro">${escape(s.intro)}</p><div class="links"><a class="button" href="${s.url}" target="_blank" rel="noopener noreferrer">${escape(s.button)} ↗</a><a href="./guides.html">All categories</a></div><div class="panel text"><h2>Before you choose</h2><ul>${list}</ul><p>This link opens a third-party search service. This site does not display live prices, make bookings, or guarantee availability.</p></div>`);
+}
+const retired = [
+  ['best-wireless-headphones-2026.html','Wireless headphone guide'],
+  ['best-ergonomic-office-chairs-2026.html','Ergonomic chair guide'],
+  ['best-air-purifiers-2026.html','Air purifier guide'],
+  ['best-espresso-machines-2026.html','Espresso machine guide'],
+  ['niche-guide-template.html','Sample guide template'],
+];
+for (const [path,title] of retired) writePage(path,title,'This guide has been withdrawn for editorial review.',`<span class="eyebrow">Editorial correction</span><h1>${escape(title)}</h1>${correction}<p class="text">This page previously showed illustrative examples as if they were real recommendations. It is unavailable while the information is reviewed. Please do not rely on the previous product names, prices, ratings or affiliate links.</p><div class="links"><a class="button" href="./guides.html">Explore current categories →</a></div>`,true);
+const routes=['','guides.html','about.html','disclosures.html',...sections.map(s=>s.file)];
+writeFileSync(resolve(root,'sitemap.xml'),`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${routes.map(p=>`  <url><loc>${base}${p}</loc></url>`).join('\n')}\n</urlset>\n`);
+writeFileSync(resolve(root,'robots.txt'),`User-agent: *\nAllow: /\nSitemap: ${base}sitemap.xml\n`);
+writeFileSync(resolve(root,'rss.xml'),`<?xml version="1.0" encoding="UTF-8"?>\n<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Honest Picks</title><link>${base}</link><description>Updates are paused during editorial review.</description><atom:link href="${base}rss.xml" rel="self" type="application/rss+xml"/></channel></rss>\n`);
+console.log('Wrote sitemap, robots and paused RSS feed.');

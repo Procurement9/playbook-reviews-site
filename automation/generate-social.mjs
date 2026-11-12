@@ -3,6 +3,10 @@ import { writeFileSync, mkdirSync, readFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+// Fail closed: the legacy social templates assert unverified testing and rankings.
+console.error('Social generation paused: legacy templates require editorial review.');
+process.exit(1);
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const postsDir = resolve(__dirname, '../posts');
 const queueFile = resolve(__dirname, 'content-queue.json');
