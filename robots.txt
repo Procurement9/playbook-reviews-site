@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://procurement9.github.io/playbook-reviews-site/sitemap.xml
