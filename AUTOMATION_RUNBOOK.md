@@ -18,11 +18,28 @@ node automation/build-site-pages.mjs
 
 GitHub Pages deployment remains separate from the paused content generator. Inspect the actual deployment status before claiming that a change is live. The monthly accounting workflow and commission files are not changed by this correction.
 
-## Dahl connection check
+## NVIDIA NIM connection check
 
-The manually triggered **Dahl connection check** workflow can test a minimal model request without generating or publishing website content. It runs only from `main`, has read-only repository permissions, and uses a GitHub Actions secret named `DAHL_API_KEY`. Create the secret in the repository's Settings → Secrets and variables → Actions; never commit the key or put it in a draft, issue, or workflow log. The Dahl key must have an allocated token balance. A successful check verifies connectivity, not the quality or safety of generated content.
+NVIDIA NIM replaces Dahl as the configured AI provider. The manually triggered **NVIDIA NIM connection check** workflow tests a minimal model request (`nvidia/llama-3.1-nemotron-70b-instruct`) without generating or publishing website content. It runs only from `main`, has read-only repository permissions, and uses a GitHub Actions secret named `NVIDIA_API_KEY`. Create the secret in the repository's **Settings → Secrets and variables → Actions**; never commit the key or put it in a draft, issue, or workflow log. Obtain a key from https://build.nvidia.com/settings/api-keys. You manage the token balance and credits manually in your NVIDIA account. A successful check verifies connectivity, not the quality or safety of generated content.
 
-The draft storage location has not yet been selected. No Dahl drafting, scheduled AI content generation, or automatic publishing is configured by this connection check. Any future publishing process must require the owner's approval before website publication and should store unapproved drafts privately.
+## Draft-and-approval workflow
+
+1. **Generate a private draft** (never published automatically):
+   ```sh
+   # Local only (saved to drafts/)
+   node automation/generate-draft.mjs --topic "best wireless noise-canceling headphones"
+   # Local + upload to your private Google Drive folder
+   node automation/generate-draft.mjs --topic "best wireless noise-canceling headphones" --drive
+   # List topics from the queue
+   node automation/generate-draft.mjs --list
+   ```
+   The generator uses NVIDIA NIM when `NVIDIA_API_KEY` is present, with the built-in AI as fallback. Drafts are written to `drafts/` (git-ignored, never committed) and optionally uploaded to the private **"Honest Picks - Private Drafts"** Google Drive folder (`1lJfYRsnDuhVppFpEc0GDD-FnORzrK0jC`).
+
+2. **Review and verify**: the owner checks every `[VERIFY]` item, confirms specs/prices/models, and edits the draft.
+
+3. **Publish with approval**: only after the owner approves, convert the verified draft into the site generator (e.g. `automation/build-site-pages.mjs`) or merge it into `pages/`, commit to `main`, and push. The existing deploy workflow then publishes the page to GitHub Pages.
+
+No content is published automatically. The weekly content workflow remains paused until you explicitly choose to re-enable it.
 
 ## Before resuming automation
 
