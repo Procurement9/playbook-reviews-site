@@ -1,49 +1,51 @@
-# Honest Picks — editorial and automation status
+# Honest Picks — workflow configuration and editorial status
 
-## Important correction
+## Required credentials
 
-The earlier demo guides and social templates contained sample products, placeholder affiliate links, prices, ratings, and unsupported claims of hands-on testing. They must not be treated as factual or scheduled to social media. The affected live pages now show correction notices; prior versions remain in Git history.
+The only user-provided secret referenced by the current GitHub Actions workflows is **NVIDIA_API_KEY**. Store it under **Repository secrets**, not Variables, at [Actions settings](https://github.com/Procurement9/playbook-reviews-site/settings/secrets/actions). The latest NVIDIA check before this configuration update, [run 43368715318](https://github.com/Procurement9/playbook-reviews-site/actions/runs/43368715318), received an empty value. This means the key was unavailable to that job; it does not prove the key itself is invalid.
 
-The earlier statement that the system would automatically publish reliable weekly guides was incorrect. The scheduled weekly publishing workflow is paused. The old guide and social generators intentionally exit with an error to prevent unreviewed publishing. The content queue is retained for planning only; its historical `published` statuses do not establish that a guide is currently live or verified. The RSS feed has no items while review is in progress. Any posts already queued in a third-party scheduler must be reviewed or removed there separately.
+The connected GitHub integration returns HTTP 403 when listing both repository secrets and variables. Therefore their complete remote inventory cannot be independently inspected or edited with this connection. Never place credentials in repository files, drafts, issues or logs. NVIDIA usage, credits and key rotation are managed manually by the owner. Obtain keys from [NVIDIA](https://build.nvidia.com/settings/api-keys); no tokens are created by this project.
 
-## Travel and dining
+**NVIDIA_MODEL** is an optional, non-secret repository variable. When omitted, the scripts use `nvidia/llama-3.1-nemotron-70b-instruct`. Model availability and inference access must still be checked with a valid key. The model identifier can be changed without committing a credential.
 
-The public site includes Hotels, Restaurants, and Flights pages. These link to external Google search services and provide comparison checklists. They do not show live offers, make bookings, or contain the owner's affiliate tracking. Provider availability, terms, and prices must be verified on the provider's site. No earnings are implied.
+The deployment workflow uses **GITHUB_TOKEN**, which GitHub supplies automatically. The monthly report uses checkout's GitHub authentication and a computed shell variable `MONTH`. Neither needs a user-created AI key, database password, Cloudflare token or Google Drive credential.
 
-To rebuild the current static pages locally after editing the generator, run:
+The manual **Workflow configuration audit** workflow reports whether required credentials are available to its own job, without making provider calls or printing credential values. The **NVIDIA NIM connection check** first runs that audit, then makes a minimal inference call only if configuration passes. Both are main-branch-only, read-only and manual-dispatch-only; they do not generate drafts or publish pages.
+
+## Private drafts: manual operation only
+
+No current GitHub Actions workflow invokes `automation/generate-draft.mjs`, uploads to Drive, or runs scheduled AI drafting. The weekly content workflow is paused; the only configured cron is the monthly accounting report. A working local draft command is not evidence of an automated end-to-end pipeline.
+
+```sh
+# Save a private local draft, using credentials supplied by the execution environment.
+node automation/generate-draft.mjs --topic "best wireless noise-canceling headphones"
+# Save locally and upload with an already-authorized Google Workspace CLI.
+node automation/generate-draft.mjs --topic "best wireless noise-canceling headphones" --drive
+node automation/generate-draft.mjs --list
+```
+
+For manual generation, the script selects NVIDIA when `NVIDIA_API_KEY` is present. If it is absent, the optional pair `OPENAI_API_BASE` and `OPENAI_API_KEY` can select the built-in runtime, otherwise `OPENROUTER_API_KEY` can select OpenRouter. These alternatives are **not required by the current workflows**. Selection is based on availability; a failed NVIDIA request does not automatically retry another provider. Do not copy Manus runtime credentials to GitHub. `.env.example` contains empty placeholders; the scripts do not load it automatically.
+
+`--drive` requires an installed `gws` CLI authorized for the intended Google account and write access to the selected private folder. Manus Google Workspace authorization is not inherited by GitHub Actions. There is no Drive-authentication workflow or named Google credential secret in this repository. Do not guess or create one. If upload fails, the command fails and the local draft remains available.
+
+Drafts go into `drafts/`, which is git-ignored, and optionally into the private **Honest Picks - Private Drafts** folder in the selected ministryestateandtrust account. Git ignore reduces accidental commits; it is not encryption or access control. Draft content is not guaranteed factual: verify every claim, source, product and price before approval. Never publish raw model output automatically.
+
+## Approval and publication
+
+Publication of a reviewed article remains manual: the owner approves the exact verified content, it is integrated into the site's actual HTML or generator, and an authorized push to `main` deploys it. No `pages/` article-import pipeline is implemented by the draft generator. The existing Pages configuration deploys from `main`; there is no verified technical owner-approval gate. Keep unapproved content out of every public branch, pull request and artifact. No schedule or approval system was enabled by this audit.
+
+Commission ledgers and reports reside in a public repository. Never store bank credentials, account numbers, private client data or payment tokens there. The accounting workflow is a report generator, not a payment or bank integration.
+
+## Editorial correction and travel pages
+
+Earlier demo guides contained placeholder products, links, prices, ratings and unsupported hands-on claims. The affected pages now show correction notices. Historical queue statuses do not prove content is verified or live. Legacy guide/social generators remain blocked and the RSS feed has no items pending review. Review any existing third-party social queues separately.
+
+Hotels, Restaurants and Flights pages contain external search links and comparison checklists, not live offers or booking integrations. Buffer, Hootsuite, 9Router and Cloudflare are not wired into the current workflows. They do not need secrets for the workflows that are actually configured; connecting them would require separate endpoint and credential setup.
+
+To rebuild the current static pages after an approved generator change:
 
 ```sh
 node automation/build-site-pages.mjs
 ```
 
-GitHub Pages deployment remains separate from the paused content generator. Inspect the actual deployment status before claiming that a change is live. The monthly accounting workflow and commission files are not changed by this correction.
-
-## NVIDIA NIM connection check
-
-NVIDIA NIM replaces Dahl as the configured AI provider. The manually triggered **NVIDIA NIM connection check** workflow tests a minimal model request (`nvidia/llama-3.1-nemotron-70b-instruct`) without generating or publishing website content. It runs only from `main`, has read-only repository permissions, and uses a GitHub Actions secret named `NVIDIA_API_KEY`. Create the secret in the repository's **Settings → Secrets and variables → Actions**; never commit the key or put it in a draft, issue, or workflow log. Obtain a key from https://build.nvidia.com/settings/api-keys. You manage the token balance and credits manually in your NVIDIA account. A successful check verifies connectivity, not the quality or safety of generated content.
-
-## Draft-and-approval workflow
-
-1. **Generate a private draft** (never published automatically):
-   ```sh
-   # Local only (saved to drafts/)
-   node automation/generate-draft.mjs --topic "best wireless noise-canceling headphones"
-   # Local + upload to your private Google Drive folder
-   node automation/generate-draft.mjs --topic "best wireless noise-canceling headphones" --drive
-   # List topics from the queue
-   node automation/generate-draft.mjs --list
-   ```
-   The generator uses NVIDIA NIM when `NVIDIA_API_KEY` is present, with the built-in AI as fallback. Drafts are written to `drafts/` (git-ignored, never committed) and optionally uploaded to the private **"Honest Picks - Private Drafts"** Google Drive folder (`1lJfYRsnDuhVppFpEc0GDD-FnORzrK0jC`).
-
-2. **Review and verify**: the owner checks every `[VERIFY]` item, confirms specs/prices/models, and edits the draft.
-
-3. **Publish with approval**: only after the owner approves, convert the verified draft into the site generator (e.g. `automation/build-site-pages.mjs`) or merge it into `pages/`, commit to `main`, and push. The existing deploy workflow then publishes the page to GitHub Pages.
-
-No content is published automatically. The weekly content workflow remains paused until you explicitly choose to re-enable it.
-
-## Before resuming automation
-
-1. Research and verify real products and sources; distinguish hands-on testing from desk research.
-2. Use authentic links and disclosures only for affiliate programs actually joined; do not promise earnings or daily payments.
-3. Implement a reviewed draft-and-approval workflow that does not automatically publish unsupported claims.
-4. Check platform/media requirements and any already-connected Buffer, Hootsuite, or Zapier automations. This project does not establish that any of those accounts are connected.
+Rebuilding and publishing are separate. Verify the actual deployment result before claiming a change is live.

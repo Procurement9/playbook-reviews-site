@@ -5,19 +5,20 @@
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { execSync } from 'child_process';
+import { execFileSync } from 'child_process';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
 const DRIVE_FOLDER_ID = '1lJfYRsnDuhVppFpEc0GDD-FnORzrK0jC'; // "Honest Picks - Private Drafts"
 
-const nvidiaKey = process.env.NVIDIA_API_KEY;
+const nvidiaKey = process.env.NVIDIA_API_KEY?.trim();
+const nvidiaModel = process.env.NVIDIA_MODEL?.trim() || 'nvidia/llama-3.1-nemotron-70b-instruct';
 const openaiBase = process.env.OPENAI_API_BASE;
 const openaiKey = process.env.OPENAI_API_KEY;
 const openrouterKey = process.env.OPENROUTER_API_KEY;
 
 function provider() {
-  if (nvidiaKey) return { kind: 'nvidia', base: 'https://integrate.api.nvidia.com/v1', key: nvidiaKey, model: 'nvidia/llama-3.1-nemotron-70b-instruct' };
+  if (nvidiaKey) return { kind: 'nvidia', base: 'https://integrate.api.nvidia.com/v1', key: nvidiaKey, model: nvidiaModel };
   if (openaiBase && openaiKey) return { kind: 'builtin', base: openaiBase.replace(/\/$/, ''), key: openaiKey, model: 'gpt-6-luna' };
   if (openrouterKey) return { kind: 'openrouter', base: 'https://openrouter.ai/api/v1', key: openrouterKey, model: 'openai/gpt-4o-mini' };
   return null;
@@ -26,6 +27,9 @@ function provider() {
 async function ask(messages, maxTokens = 2200) {
   const p = provider();
   if (!p) throw new Error('No AI provider configured (set NVIDIA_API_KEY, or use the built-in AI)');
+  if (p.kind === 'nvidia' && !/^[a-zA-Z0-9][a-zA-Z0-9._/-]{0,199}$/.test(p.model)) {
+    throw new Error('NVIDIA_MODEL has an invalid model identifier format');
+  }
   const r = await fetch(`${p.base}/chat/completions`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${p.key}` },
@@ -65,6 +69,7 @@ async function main() {
 
   const topic = topicArg ? { title: topicArg, niche: topicArg } : nextTopic();
   const slug = topic.slug || slugify(topic.title);
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) throw new Error('Draft slug is invalid');
   console.log(`Generating draft for: "${topic.title}" (${topic.niche})`);
 
   const system = `You are a careful, honest affiliate-review writer. Rules you must never violate:
@@ -91,11 +96,16 @@ async function main() {
   if (uploadDrive) {
     try {
       const jsonMeta = JSON.stringify({ name: `${topic.title} (DRAFT — review before publishing)`, parents: [DRIVE_FOLDER_ID], description: `Draft generated ${new Date().toISOString()} via ${via}. Publish to Honest Picks only after owner approval.` });
-      const out = execSync(`gws drive files create --upload "${mdPath}" --upload-content-type "text/markdown" --json '${jsonMeta}' --params '{"fields":"id,name,webViewLink"}'`, { encoding: 'utf8', timeout: 60000 });
+      const out = execFileSync('gws', [
+        'drive', 'files', 'create', '--upload', mdPath,
+        '--upload-content-type', 'text/markdown', '--json', jsonMeta,
+        '--params', '{"fields":"id,name,webViewLink"}',
+      ], { encoding: 'utf8', timeout: 60000, stdio: ['ignore', 'pipe', 'pipe'] });
       const res = JSON.parse(out);
+      if (!res.id) throw new Error('Drive upload returned no file identifier');
       console.log(`Uploaded to private Drive: ${res.webViewLink || res.id}`);
-    } catch (e) {
-      console.warn(`Drive upload skipped (gws unavailable or not authorized): ${e.message?.split('\n')[0]}`);
+    } catch {
+      throw new Error('Drive upload failed; the draft remains local. Check gws authorization and folder access');
     }
   }
 

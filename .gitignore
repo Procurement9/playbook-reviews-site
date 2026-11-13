@@ -1,3 +1,10 @@
-
-# Private drafts (review before publishing — never commit)
+# Private drafts: review before publishing.
 drafts/
+
+# Local credentials must never be committed.
+.env
+.env.*
+!.env.example
+credentials*.json
+service-account*.json
+node_modules/

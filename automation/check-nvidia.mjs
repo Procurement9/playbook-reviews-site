@@ -1,11 +1,16 @@
 #!/usr/bin/env node
 // Minimal, non-publishing NVIDIA NIM connectivity check. Never log credentials or full bodies.
 const base = 'https://integrate.api.nvidia.com/v1';
-const model = 'nvidia/llama-3.1-nemotron-70b-instruct';
-const key = process.env.NVIDIA_API_KEY;
+const model = process.env.NVIDIA_MODEL?.trim() || 'nvidia/llama-3.1-nemotron-70b-instruct';
+const key = process.env.NVIDIA_API_KEY?.trim();
 
 if (!key) {
   console.error('NVIDIA key is missing. Add NVIDIA_API_KEY as a GitHub Actions secret.');
+  process.exit(1);
+}
+
+if (!/^[a-zA-Z0-9][a-zA-Z0-9._/-]{0,199}$/.test(model)) {
+  console.error('NVIDIA_MODEL has an invalid model identifier format.');
   process.exit(1);
 }
 
