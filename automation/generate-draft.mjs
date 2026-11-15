@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Generates honest buyer-guide DRAFTS using NVIDIA NIM (with built-in AI fallback).
+// Generates honest buyer-guide DRAFTS using Ollama (OLLAMA_MODEL, optional OLLAMA_BASE_URL), NVIDIA NIM (with built-in AI fallback).
 // Drafts are saved locally to drafts/ and optionally uploaded to your private
 // Google Drive folder. They are NEVER committed or published automatically.
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs';
@@ -17,7 +17,11 @@ const openaiBase = process.env.OPENAI_API_BASE;
 const openaiKey = process.env.OPENAI_API_KEY;
 const openrouterKey = process.env.OPENROUTER_API_KEY;
 
+const ollamaModel = process.env.OLLAMA_MODEL?.trim();
+const ollamaBase = (process.env.OLLAMA_BASE_URL?.trim() || 'http://localhost:11434').replace(/\/$/, '');
+
 function provider() {
+  if (ollamaModel) return { kind: 'ollama', base: `${ollamaBase}/v1`, key: process.env.OLLAMA_API_KEY?.trim() || 'ollama', model: ollamaModel };
   if (nvidiaKey) return { kind: 'nvidia', base: 'https://integrate.api.nvidia.com/v1', key: nvidiaKey, model: nvidiaModel };
   if (openaiBase && openaiKey) return { kind: 'builtin', base: openaiBase.replace(/\/$/, ''), key: openaiKey, model: 'gpt-6-luna' };
   if (openrouterKey) return { kind: 'openrouter', base: 'https://openrouter.ai/api/v1', key: openrouterKey, model: 'openai/gpt-4o-mini' };
@@ -26,7 +30,7 @@ function provider() {
 
 async function ask(messages, maxTokens = 2200) {
   const p = provider();
-  if (!p) throw new Error('No AI provider configured (set NVIDIA_API_KEY, or use the built-in AI)');
+  if (!p) throw new Error('No AI provider configured (set OLLAMA_MODEL, NVIDIA_API_KEY, or use the built-in AI)');
   if (p.kind === 'nvidia' && !/^[a-zA-Z0-9][a-zA-Z0-9._/-]{0,199}$/.test(p.model)) {
     throw new Error('NVIDIA_MODEL has an invalid model identifier format');
   }
