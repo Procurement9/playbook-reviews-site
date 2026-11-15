@@ -36,6 +36,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: branch-deploy
     continue-on-error: true
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
