@@ -1,0 +1,7 @@
+ACCOUNTING REPORT — 2026-10
+------------------
+  Commissions: $0.00  (0 entries)
+  Payouts:     $0.00  (0)
+  Balance due: $0.00  (lifetime balance $0.00)
+  By guide:
+  Payout accounts: directDeposit=not-set-up, amazonGiftCard=not-set-up, other=not-set-up

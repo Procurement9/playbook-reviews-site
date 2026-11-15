@@ -1,0 +1,20 @@
+{
+  "amazonTag": "",
+  "paymentAccounts": {
+    "directDeposit": {
+      "provider": "",
+      "status": "not-set-up",
+      "notes": ""
+    },
+    "amazonGiftCard": {
+      "status": "not-set-up",
+      "notes": ""
+    },
+    "other": {
+      "provider": "",
+      "status": "not-set-up",
+      "notes": ""
+    }
+  },
+  "createdAt": "2026-11-11T03:53:14.279Z"
+}
